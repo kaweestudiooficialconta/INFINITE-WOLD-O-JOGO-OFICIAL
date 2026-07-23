@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="pt-BR">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Infinite World - Paradox Edition (V3)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=VT323&amp;display=swap" rel="stylesheet">
+  <style>
+:root{--neon-green:#00ff66;--neon-blue:#00d4ff;--neon-purple:#bd00ff;--neon-red:#ff3366;--neon-gold:#ffb700;--ui-bg:rgba(2,8,4,0.92);}
+*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;}
+body{background:#020205;color:#fff;font-family:'Orbitron',sans-serif;overflow:hidden;display:flex;justify-content:center;align-items:center;height:100vh;width:100%;}
+#gameContainer{position:relative;width:95vw;height:90vh;max-width:1440px;max-height:810px;overflow:hidden;border:3px solid rgba(0,255,102,0.6);box-shadow:0 0 20px rgba(0,255,102,0.3),inset 0 0 40px rgba(0,0,0,0.9);background:#000;border-radius:12px;}
+canvas{display:block;width:100%;height:100%;image-rendering:pixelated;}
+.overlay{position:absolute;width:100%;height:100%;top:0;left:0;display:none;z-index:100;background:radial-gradient(circle at center,#05140b 0%,#010402 100%);flex-direction:column;justify-content:center;align-items:center;}
+#splash-screen{position:absolute;width:100%;height:100%;top:0;left:0;z-index:200;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:opacity 0.8s ease-out;}
+.dev-title{font-size:18px;color:var(--neon-green);letter-spacing:10px;opacity:0.7;margin-bottom:10px;text-shadow:0 0 10px var(--neon-green);}
+.dev-name{font-size:65px;color:#fff;font-weight:900;letter-spacing:5px;text-shadow:0 0 30px var(--neon-green);animation:pulseGlow 1.5s infinite alternate;}
+@keyframes pulseGlow{0%{transform:scale(0.97);text-shadow:0 0 20px rgba(0,255,102,0.5);}100%{transform:scale(1.03);text-shadow:0 0 40px rgba(0,255,102,1);}}
+.menu-layout{align-items:flex-start;padding-left:8%;justify-content:center;}
+.menu-sidebar{width:460px;background:rgba(1,10,5,0.85);padding:40px;border-radius:16px;border:2px solid var(--neon-green);backdrop-filter:blur(12px);box-shadow:0 0 50px rgba(0,255,102,0.25);}
+.logo{font-size:56px;font-weight:900;line-height:0.9;margin-bottom:30px;color:#fff;text-shadow:0 0 20px var(--neon-blue);letter-spacing:2px;}
+.logo span{color:var(--neon-green);text-shadow:0 0 25px var(--neon-green);}
+.menu-title{font-size:32px;font-weight:900;color:#fff;text-shadow:0 0 20px var(--neon-blue);letter-spacing:3px;margin-bottom:24px;}
+.menu-button{display:flex;align-items:center;gap:15px;font-size:17px;padding:14px 22px;margin-bottom:12px;cursor:pointer;transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);color:#d0ffd0;border:1px solid rgba(0,255,100,0.2);background:rgba(0,30,10,0.3);border-radius:8px;width:100%;font-weight:bold;letter-spacing:1px;}
+.menu-button:hover{color:#000;background:var(--neon-green);box-shadow:0 0 30px var(--neon-green);transform:translateX(10px) scale(1.02);}
+.menu-button.back{border-color:rgba(255,255,255,0.25);color:#eee;background:rgba(255,255,255,0.05);}
+.menu-button.back:hover{background:#fff;color:#000;box-shadow:0 0 20px #fff;}
+.level-card{display:flex;flex-direction:column;gap:6px;padding:16px 20px;margin-bottom:12px;cursor:pointer;transition:all 0.25s ease;color:#d0ffd0;border:1px solid rgba(0,255,100,0.2);background:rgba(0,30,10,0.3);border-radius:10px;width:100%;font-weight:bold;letter-spacing:1px;}
+.level-card:hover{color:#000;background:var(--neon-green);box-shadow:0 0 25px var(--neon-green);transform:translateX(6px);}
+.level-card .lbl{font-size:12px;opacity:0.75;letter-spacing:3px;}
+.level-card .name{font-size:22px;font-weight:900;}
+.level-card.special{border-color:var(--neon-gold);}
+.level-card.special .lbl{color:var(--neon-gold);}
+.level-card.locked{opacity:0.45;cursor:not-allowed;}
+.level-card.locked:hover{transform:none;background:rgba(0,30,10,0.3);color:#d0ffd0;box-shadow:none;}
+#hud{position:absolute;width:100%;height:100%;top:0;left:0;pointer-events:none;display:none;z-index:50;}
+.player-info{position:absolute;top:20px;left:20px;width:300px;background:var(--ui-bg);padding:14px;border:2px solid var(--neon-blue);border-radius:10px;backdrop-filter:blur(6px);}
+.bar-container{width:100%;height:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);margin-top:6px;border-radius:4px;overflow:hidden;}
+.fill-hp{height:100%;width:100%;background:linear-gradient(90deg,var(--neon-red),#cc0033);transition:width 0.2s;}
+.fill-xp{height:100%;width:0%;background:linear-gradient(90deg,var(--neon-purple),#7700cc);transition:width 0.4s;}
+.coin-display{position:absolute;top:20px;left:340px;background:var(--ui-bg);border:2px solid var(--neon-gold);padding:8px 16px;border-radius:10px;font-size:14px;font-weight:bold;color:var(--neon-gold);display:flex;align-items:center;gap:8px;}
+.level-banner{position:absolute;top:20px;right:20px;background:var(--ui-bg);border:2px solid var(--neon-green);padding:8px 16px;border-radius:10px;font-size:14px;font-weight:bold;color:var(--neon-green);letter-spacing:2px;}
+.pause-btn{position:absolute;top:70px;right:20px;background:var(--ui-bg);border:2px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:bold;color:#fff;letter-spacing:1px;pointer-events:auto;cursor:pointer;}
+.pause-btn:hover{border-color:var(--neon-green);color:var(--neon-green);}
+#interact-prompt{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ui-bg);border:2px solid var(--neon-gold);padding:10px 22px;border-radius:10px;font-size:16px;color:var(--neon-gold);font-weight:bold;letter-spacing:2px;display:none;pointer-events:none;box-shadow:0 0 20px rgba(255,183,0,0.4);}
+#dialogue-box{position:absolute;bottom:120px;left:50%;transform:translateX(-50%);width:85%;max-width:900px;background:var(--ui-bg);border:3px solid var(--neon-green);padding:20px;border-radius:12px;display:none;font-size:22px;font-family:'VT323';color:#fff;pointer-events:auto;}
+  </style>
+  <script src="assets.js"></script>
+ </head>
+ <body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud">
+        <div class="player-info">
+            <div id="hud-name">AVENTUREIRO LV. 1</div>
+            <div class="bar-container"><div id="hp-fill" class="fill-hp"></div></div>
+            <div class="bar-container"><div id="xp-fill" class="fill-xp"></div></div>
+        </div>
+        <div class="coin-display">💰 <span id="hud-coins">0</span></div>
+        <div class="level-banner" id="level-banner">CASA</div>
+        <div class="pause-btn" id="pause-btn">☰ MENU</div>
+        <div id="interact-prompt">▲ / W / E — ENTRAR</div>
+    </div>
+
+    <div id="main-menu" class="overlay menu-layout" style="display:flex;">
+        <div class="menu-sidebar">
+            <div class="logo">INFINITE<br><span>PARADOX</span></div>
+            <div class="menu-button" id="start-btn">🎮 INICIAR JOGO</div>
+            <div class="menu-button" id="story-btn">📖 MODO HISTÓRIA</div>
+            <div class="menu-button" onclick="alert('Loja em breve!')">🛒 LOJA DE SKINS</div>
+            <div class="menu-button" onclick="alert('Kawe Developer - 2024')">📜 CRÉDITOS</div>
+        </div>
+    </div>
+
+    <div id="level-menu" class="overlay menu-layout">
+        <div class="menu-sidebar">
+            <div class="menu-title">SELECIONAR NÍVEL</div>
+            <div class="level-card special" data-level="casa">
+                <div class="lbl">★ NÍVEL ESPECIAL</div>
+                <div class="name">CASA</div>
+            </div>
+            <div class="level-card locked"><div class="lbl">NÍVEL 1</div><div class="name">🔒 EM BREVE</div></div>
+            <div class="level-card locked"><div class="lbl">NÍVEL 2</div><div class="name">🔒 EM BREVE</div></div>
+            <div class="menu-button back" id="level-back-btn">← VOLTAR</div>
+        </div>
+    </div>
+
+    <div id="pause-menu" class="overlay menu-layout">
+        <div class="menu-sidebar">
+            <div class="menu-title">PAUSA</div>
+            <div class="menu-button" id="resume-btn">▶ CONTINUAR</div>
+            <div class="menu-button back" id="quit-btn">⌂ SAIR PARA O MENU</div>
+        </div>
+    </div>
+
+    <div id="splash-screen">
+        <div class="dev-title">APRESENTA</div>
+        <div class="dev-name">KAWE DEVELOPER</div>
+    </div>
+  </div>
+
+  <audio id="menu-music" src="/__l5e/assets-v1/bda30826-3517-4787-9dcb-6a6fc2fad8f9/menu_music.mp3" loop preload="auto"></audio>
+
+  <script>
+    const CASA_EXTERIOR_URL = '/__l5e/assets-v1/e966c7ff-af7e-47f6-b196-ad8ec97284e5/casa_exterior.png';
+    const CASA_INTERIOR_URL = '/__l5e/assets-v1/d4afec93-4b61-42ff-a5ef-bfcaaa858f10/casa_interior.jpeg';
+    const CASA_CENARIO_URL  = '/__l5e/assets-v1/4cc9c1f2-9483-48c5-a2cb-d5c5f63adc71/casa_cenario.jpeg';
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1280;
+    canvas.height = 720;
+
+    const images = {};
+    let loadedImages = 0;
+    // Extra scene assets loaded alongside base assets
+    const EXTRA_ASSETS = {
+        casa_exterior: CASA_EXTERIOR_URL,
+        casa_interior: CASA_INTERIOR_URL,
+        casa_cenario: CASA_CENARIO_URL
+    };
+    const totalImages = Object.keys(ASSETS_B64).length + Object.keys(EXTRA_ASSETS).length;
+
+    function loadAssets(callback) {
+        const onOne = () => { loadedImages++; if (loadedImages === totalImages) callback(); };
+        const chromaKey = (img, targetR, targetG, targetB, tol) => {
+            try {
+                const c = document.createElement('canvas');
+                c.width = img.naturalWidth; c.height = img.naturalHeight;
+                const cx = c.getContext('2d');
+                cx.drawImage(img, 0, 0);
+                const d = cx.getImageData(0, 0, c.width, c.height);
+                const px = d.data;
+                for (let i = 0; i < px.length; i += 4) {
+                    const dr = px[i] - targetR, dg = px[i+1] - targetG, db = px[i+2] - targetB;
+                    if (dr*dr + dg*dg + db*db < tol*tol) px[i+3] = 0;
+                }
+                cx.putImageData(d, 0, 0);
+                const out = new Image();
+                out.src = c.toDataURL('image/png');
+                return out;
+            } catch(_) { return img; }
+        };
+        for (let name in ASSETS_B64) {
+            images[name] = new Image();
+            images[name].onload = () => {
+                if (name === 'player') {
+                    // Sprite sheet has a solid muted-green/grey background; key it out.
+                    images[name] = chromaKey(images[name], 108, 118, 108, 55);
+                }
+                onOne();
+            };
+            images[name].onerror = onOne;
+            images[name].src = ASSETS_B64[name];
+        }
+        for (let name in EXTRA_ASSETS) {
+            images[name] = new Image();
+            images[name].onload = onOne;
+            images[name].onerror = onOne;
+            images[name].src = EXTRA_ASSETS[name];
+        }
+    }
+
+    // ---------- Music (menus only) ----------
+    const menuMusic = document.getElementById('menu-music');
+    menuMusic.volume = 0.45;
+    let musicUnlocked = false;
+    function playMenuMusic() {
+        try {
+            menuMusic.currentTime = menuMusic.currentTime || 0;
+            const p = menuMusic.play();
+            if (p && p.catch) p.catch(() => {});
+        } catch(_) {}
+    }
+    function stopMenuMusic() {
+        try { menuMusic.pause(); } catch(_) {}
+    }
+    // Unlock audio on first user gesture
+    ['click','keydown','touchstart'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            if (musicUnlocked) return;
+            musicUnlocked = true;
+            if (isMenuVisible()) playMenuMusic();
+        }, { once: false });
+    });
+
+    function isMenuVisible() {
+        return ['main-menu','level-menu','pause-menu'].some(id => {
+            const el = document.getElementById(id);
+            return el && el.style.display === 'flex';
+        });
+    }
+
+    function showOverlay(id) {
+        ['main-menu','level-menu','pause-menu'].forEach(x => {
+            document.getElementById(x).style.display = (x === id) ? 'flex' : 'none';
+        });
+        if (id) playMenuMusic(); else stopMenuMusic();
+    }
+    function hideAllOverlays() {
+        ['main-menu','level-menu','pause-menu'].forEach(x => {
+            document.getElementById(x).style.display = 'none';
+        });
+        stopMenuMusic();
+    }
+
+    class Particle {
+        constructor(x, y, vx, vy, size, color, life, type) {
+            this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+            this.size = size; this.color = color; this.life = life;
+            this.maxLife = life; this.type = type;
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy; this.life--;
+            if (this.type === 'smoke') this.size *= 0.95;
+        }
+        draw(ctx, camX) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+            ctx.fillStyle = this.color;
+            // Always draw as soft rect — bundled dust sprite is a dark blob.
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x - camX, this.y, this.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // ---------- Level definitions ----------
+    // Ground line = y coordinate of player's feet
+    const GROUND_Y = 614; // player.y (top) sits at 550 with h=64 -> feet 614
+    const LEVELS = {
+        // Special level: outdoor scene in front of the house
+        casa_outdoor: {
+            name: 'CASA',
+            width: 3200,           // proporcional — nível curto de lazer
+            background: 'casa_cenario',
+            // Bottom of the background has a shutterstock watermark — crop it
+            bgCropBottomPct: 0.08,
+            bgMode: 'cover',
+            music: true,
+            entities: [
+                // House sits with its feet on the ground line; door hitbox
+                // stretches down to the ground so the player always reaches it.
+                { type: 'casa_exterior', x: 1400, y: GROUND_Y - 420, w: 420, h: 420, solid: true, door: { x: 175, y: 220, w: 90, h: 220 } }
+            ],
+            spawn: { x: 200, facingRight: true }
+        },
+        // Interior of the house
+        casa_indoor: {
+            name: 'CASA — INTERIOR',
+            width: 1600,
+            background: 'casa_interior',
+            bgMode: 'cover',
+            music: true,
+            entities: [
+                // invisible "exit" hotspot near the left
+                { type: 'exit_zone', x: 60, y: GROUND_Y - 200, w: 120, h: 200, exit: 'casa_outdoor' }
+            ],
+            spawn: { x: 220, facingRight: false }
+        },
+        // The original infinite-world (story mode)
+        story: {
+            name: 'MODO HISTÓRIA',
+            width: 12000,
+            background: 'background',
+            music: false,
+            entities: (() => {
+                const arr = [];
+                for (let i = 0; i < 10; i++) arr.push({ type: 'house', x: 400 + i * 1200, y: GROUND_Y - 250, w: 250, h: 250 });
+                for (let i = 0; i < 20; i++) {
+                    arr.push({
+                        type: Math.random() > 0.6 ? 'enemy' : 'rabbit',
+                        x: 800 + Math.random() * 8000,
+                        y: GROUND_Y - 48, w: 48, h: 48,
+                        dir: 1, speed: 1 + Math.random() * 2,
+                        homeMin: 0, homeMax: 12000
+                    });
+                }
+                return arr;
+            })(),
+            spawn: { x: 300, facingRight: true }
+        }
+    };
+
+    const game = {
+        state: "MENU", // MENU | PLAYING | PAUSED
+        levelId: null,
+        level: null,
+        player: { x: 300, y: 550, w: 64, h: 64, velY: 0, isJumping: false, facingRight: true, speed: 6, hp: 100, maxHp: 100, xp: 0, maxXp: 100, level: 1 },
+        cameraX: 0,
+        entities: [],
+        particles: [],
+        coins: 0,
+        frameCount: 0,
+        nearInteractable: null,
+
+        loadLevel(id) {
+            const def = LEVELS[id];
+            if (!def) return;
+            this.levelId = id;
+            this.level = def;
+            // Deep-copy entities so bounces/positions don't persist across restarts
+            this.entities = def.entities.map(e => ({ ...e }));
+            this.particles = [];
+            this.player.x = def.spawn.x;
+            this.player.y = 550;
+            this.player.velY = 0;
+            this.player.isJumping = false;
+            this.player.facingRight = !!def.spawn.facingRight;
+            this.cameraX = 0;
+            this.nearInteractable = null;
+            document.getElementById('level-banner').innerText = def.name;
+            if (this.state === 'PLAYING') {
+                if (def.music) playMenuMusic(); else stopMenuMusic();
+            }
+        },
+
+        startLevel(id) {
+            this.loadLevel(id);
+            this.state = "PLAYING";
+            hideAllOverlays();
+            document.getElementById('hud').style.display = 'block';
+            if (this.level && this.level.music) playMenuMusic();
+        },
+
+        spawnDust(x, y) {
+            for (let i = 0; i < 5; i++) {
+                this.particles.push(new Particle(
+                    x + (Math.random() - 0.5) * 20, y,
+                    (Math.random() - 0.5) * 2, -Math.random() * 2,
+                    15 + Math.random() * 15, '#fff', 20, 'dust'
+                ));
+            }
+        },
+
+        update() {
+            if (this.state !== "PLAYING") return;
+            this.frameCount++;
+
+            const lvl = this.level;
+            const worldW = lvl.width;
+
+            // Movement
+            if (keys['arrowright'] || keys['d']) {
+                this.player.x += this.player.speed;
+                this.player.facingRight = true;
+            }
+            if (keys['arrowleft'] || keys['a']) {
+                this.player.x -= this.player.speed;
+                this.player.facingRight = false;
+            }
+            // Clamp to world bounds
+            if (this.player.x < 0) this.player.x = 0;
+            if (this.player.x + this.player.w > worldW) this.player.x = worldW - this.player.w;
+
+            // Gravity / jump
+            this.player.velY += 0.8;
+            this.player.y += this.player.velY;
+            if (this.player.y >= 550) {
+                if (this.player.isJumping) this.spawnDust(this.player.x + 32, GROUND_Y);
+                this.player.y = 550;
+                this.player.velY = 0;
+                this.player.isJumping = false;
+            }
+            if ((keys['arrowup'] || keys['w'] || keys[' ']) && !this.player.isJumping) {
+                this.player.velY = -15;
+                this.player.isJumping = true;
+                this.spawnDust(this.player.x + 32, GROUND_Y);
+            }
+
+            // Camera clamped
+            const targetCam = this.player.x - 400;
+            this.cameraX += (targetCam - this.cameraX) * 0.12;
+            const maxCam = Math.max(0, worldW - canvas.width);
+            if (this.cameraX < 0) this.cameraX = 0;
+            if (this.cameraX > maxCam) this.cameraX = maxCam;
+
+            // Entities update + wander bounds
+            this.entities.forEach(e => {
+                if (e.type === 'rabbit' || e.type === 'enemy') {
+                    e.x += e.dir * e.speed;
+                    if (Math.random() > 0.98) e.dir *= -1;
+                    const lo = e.homeMin ?? 0;
+                    const hi = e.homeMax ?? worldW;
+                    if (e.x < lo) { e.x = lo; e.dir = 1; }
+                    if (e.x + e.w > hi) { e.x = hi - e.w; e.dir = -1; }
+                }
+            });
+
+            // Particles
+            for (let i = this.particles.length - 1; i >= 0; i--) {
+                this.particles[i].update();
+                if (this.particles[i].life <= 0) this.particles.splice(i, 1);
+            }
+
+            // Interaction detection (door / exit)
+            this.nearInteractable = null;
+            const px = this.player.x, py = this.player.y, pw = this.player.w, ph = this.player.h;
+            for (const e of this.entities) {
+                if (e.door) {
+                    const dx = e.x + e.door.x, dy = e.y + e.door.y, dw = e.door.w, dh = e.door.h;
+                    if (px + pw > dx && px < dx + dw && py + ph > dy && py < dy + dh) {
+                        this.nearInteractable = { kind: 'enter', target: 'casa_indoor' };
+                        break;
+                    }
+                }
+                if (e.type === 'exit_zone') {
+                    if (px + pw > e.x && px < e.x + e.w && py + ph > e.y && py < e.y + e.h) {
+                        this.nearInteractable = { kind: 'exit', target: e.exit };
+                        break;
+                    }
+                }
+            }
+            const prompt = document.getElementById('interact-prompt');
+            if (this.nearInteractable) {
+                prompt.style.display = 'block';
+                prompt.innerText = this.nearInteractable.kind === 'enter'
+                    ? '▲ / W / E — ENTRAR NA CASA'
+                    : '▲ / W / E — SAIR DA CASA';
+            } else {
+                prompt.style.display = 'none';
+            }
+
+            document.getElementById('hud-coins').innerText = this.coins;
+        },
+
+        draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const lvl = this.level;
+            if (!lvl) return;
+
+            // Background
+            const bg = images[lvl.background];
+            if (bg && bg.complete && bg.naturalWidth) {
+                const cropBottom = lvl.bgCropBottomPct ?? 0;
+                const srcH = bg.naturalHeight * (1 - cropBottom);
+                if (lvl.bgMode === 'cover') {
+                    // Stretched panel that pans with the camera (interior)
+                    const scale = canvas.height / srcH;
+                    const drawW = bg.naturalWidth * scale;
+                    const maxCam = Math.max(1, lvl.width - canvas.width);
+                    const panRatio = Math.max(0, drawW - canvas.width) / maxCam;
+                    ctx.drawImage(
+                        bg,
+                        0, 0, bg.naturalWidth, srcH,
+                        -this.cameraX * panRatio, 0, drawW, canvas.height
+                    );
+                } else {
+                    // Parallax tiled
+                    const parallax = 0.5;
+                    const scale = canvas.height / srcH;
+                    const tileW = bg.naturalWidth * scale;
+                    let bgX = -((this.cameraX * parallax) % tileW);
+                    if (bgX > 0) bgX -= tileW;
+                    for (let x = bgX; x < canvas.width; x += tileW) {
+                        ctx.drawImage(
+                            bg,
+                            0, 0, bg.naturalWidth, srcH,
+                            x, 0, tileW, canvas.height
+                        );
+                    }
+                }
+            } else {
+                ctx.fillStyle = '#1a2a3a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Entities
+            this.entities.forEach(e => {
+                if (e.type === 'exit_zone') return; // invisible
+                const img = images[e.type];
+                if (img && img.complete && img.naturalWidth) {
+                    ctx.drawImage(img, e.x - this.cameraX, e.y, e.w, e.h);
+                }
+            });
+
+            // Particles
+            this.particles.forEach(p => p.draw(ctx, this.cameraX));
+
+            // Player
+            const pImg = images['player'];
+            if (pImg && pImg.complete && pImg.naturalWidth) {
+                // Sprite sheet: 720x480 grid. Column 0 has row labels — frames start at column 1.
+                // Cell size 90x96. Rows: 0 idle, 1 walk, 2 run, 3 attack, 4 hurt.
+                const CW = 90, CH = 96;
+                let row = 0, frames = 6;
+                const moving = keys['arrowright'] || keys['arrowleft'] || keys['a'] || keys['d'];
+                if (this.player.isJumping) { row = 2; frames = 7; }
+                else if (moving) { row = 1; frames = 7; }
+                const speedDivisor = this.player.isJumping ? 8 : (moving ? 5 : 10);
+                const fi = Math.floor(this.frameCount / speedDivisor) % frames;
+                const sx = (1 + fi) * CW;
+                const sy = row * CH;
+                ctx.save();
+                if (!this.player.facingRight) {
+                    ctx.translate(this.player.x - this.cameraX + this.player.w, this.player.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(pImg, sx, sy, CW, CH, 0, 0, this.player.w, this.player.h);
+                } else {
+                    ctx.drawImage(pImg, sx, sy, CW, CH, this.player.x - this.cameraX, this.player.y, this.player.w, this.player.h);
+                }
+                ctx.restore();
+            }
+        },
+
+        loop() {
+            this.update();
+            this.draw();
+            requestAnimationFrame(() => this.loop());
+        },
+
+        pause() {
+            if (this.state !== 'PLAYING') return;
+            this.state = 'PAUSED';
+            document.getElementById('hud').style.display = 'none';
+            showOverlay('pause-menu');
+        },
+        resume() {
+            if (this.state !== 'PAUSED') return;
+            this.state = 'PLAYING';
+            hideAllOverlays();
+            document.getElementById('hud').style.display = 'block';
+        },
+        quitToMenu() {
+            this.state = 'MENU';
+            this.level = null;
+            this.levelId = null;
+            document.getElementById('hud').style.display = 'none';
+            showOverlay('main-menu');
+        }
+    };
+
+    const keys = {};
+    window.addEventListener('keydown', e => {
+        const k = e.key.toLowerCase();
+        keys[k] = true;
+        // Interact
+        if ((k === 'e' || k === 'w' || k === 'arrowup') && game.state === 'PLAYING' && game.nearInteractable) {
+            const target = game.nearInteractable.target;
+            game.nearInteractable = null;
+            game.loadLevel(target);
+        }
+        // Pause
+        if (k === 'escape' || k === 'p') {
+            if (game.state === 'PLAYING') game.pause();
+            else if (game.state === 'PAUSED') game.resume();
+        }
+    });
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+    // ---------- Menu wiring ----------
+    document.getElementById('start-btn').onclick = () => showOverlay('level-menu');
+    document.getElementById('level-back-btn').onclick = () => showOverlay('main-menu');
+    document.getElementById('story-btn').onclick = () => game.startLevel('story');
+    document.querySelectorAll('#level-menu .level-card').forEach(card => {
+        if (card.classList.contains('locked')) return;
+        card.onclick = () => {
+            const lvl = card.getAttribute('data-level');
+            if (lvl === 'casa') game.startLevel('casa_outdoor');
+        };
+    });
+    document.getElementById('pause-btn').onclick = () => game.pause();
+    document.getElementById('resume-btn').onclick = () => game.resume();
+    document.getElementById('quit-btn').onclick = () => game.quitToMenu();
+
+    window.onload = () => {
+        setTimeout(() => {
+            document.getElementById('splash-screen').style.opacity = '0';
+            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 800);
+        }, 2000);
+        loadAssets(() => {
+            // Preload initial (menu) — no level yet, loop still safe with lvl guard
+            game.loop();
+        });
+    };
+  </script>
+ </body>
+</html>
